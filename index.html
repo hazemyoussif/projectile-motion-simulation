@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Projectile Motion Simulation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family:"Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica", "Arial", "sans-serif";
+        }
+
+        /* Header */
+        .header {
+            grid-area: header;
+            background-color: #fff;
+            padding: 10px;
+            text-align: left;
+            font-size: 24px;
+        }
+
+        /* Grid & Canvas */
+        .row::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+
+        [class*="col-"] {
+            float: left;
+            padding: 15px;
+        }
+        
+        
+        [class*="col-"] {
+            width: 100%;
+        }
+
+        @media only screen and (min-width: 600px) {
+            /* For tablets: */
+            .col-s-2 {width: 16.66%;}
+            .col-s-3 {width: 25%;}
+            .col-s-3 {width: 25%;}
+            .col-s-4 {width: 33.33%;}
+            .col-s-6 {width: 50%;}
+            .col-s-8 {width: 66.66%;}
+            .col-s-9 {width: 75%;}
+            .col-s-10 { width: 83.33%;}
+            .col-s-12 {width: 100%;}
+        }
+
+        @media only screen and (min-width: 768px) {
+            /* For desktop: */
+            .col-2 {width: 16.66%;}
+            .col-3 {width: 25%;}
+            .col-4 { width: 33.33%;}
+            .col-6 {width: 50%;}
+            .col-8 {width: 66.66%;}
+            .col-9 {width: 75%;}
+            .col-10 {width: 83.33%;}
+            .col-12 {width: 100%;}
+        }
+
+        canvas {
+            border: 1px solid #d3d3d3;
+        }
+
+        /* Input */
+        input[type=number],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
+            display: inline-block;
+        }
+
+        label {
+            padding: 12px 12px 12px 0;
+            display: inline-block;
+        }
+
+        /* Buttons */
+        .disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn {
+            border: none;
+            color: white;
+            padding: 10px 10px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            width: 100%
+        }
+
+        .btn-blue {background-color: #008CBA;}
+        .btn-red {background-color: #f44336;}
+        .btn-yellow {background-color: #FFC125; color: black;}
+        .btn-blue-dark {background-color: #3a51bb;}
+        .btn-black {background-color: #333;}
+
+    </style>
+</head>
+
+<body onresize="simulationArea.updateParameters()">
+
+    <div class="header">
+        <h2>Projectile Motion Simulation</h2>
+    </div>
+    <div class="row">
+        <div class="col-3">
+            <div class="row">
+                <div class="col-6"><label>Velocity (m/s)</label></div>
+                <div class="col-6"><input type="number" onChange="simulationArea.updateParameters()" min='0' max='500'
+                        step=1 value=40 id="initialVelocity"></div>
+            </div>
+            <div class="row">
+                <div class="col-6"><label>Angle (&#176;)</label></div>
+                <div class="col-6"><input type="number" onChange="simulationArea.updateParameters()" min=1 max=90
+                        value=45 id="projectionAngle"></div>
+            </div>
+
+            <div class="row">
+                <div class="col-4"><label>Gravity</label></div>
+                <div class="col-8"><input type="number" onChange="simulationArea.updateParameters()" min='.1' step=.1
+                        value=9.8 id="initialGravity"></div>
+            </div>
+            <div class="row">
+                <div class="col-4"><label>Speed</label></div>
+                <div class="col-8"><input type="number" onChange="simulationArea.updateParameters()" min='1' max=20
+                        step=1 value=5 id="simulationSpeed"></div>
+            </div>
+            <div class="row">
+                <div class="col-4"><label>V(x,y)</label></div>
+                <div class="col-8">
+                    <select id="xyVelocity" onChange="simulationArea.updateParameters()" id="xyVelocity">
+                        <option value="show">Show</option>
+                        <option value=false>Hide</option>
+                    </select>
+            </div>
+        </div>
+            <div class="row">
+                <div class="col-4"><label>Reset</label></div>
+                <div class="col-8">
+                    <select onChange="simulationArea.updateParameters()" id="autoReset">
+                        <option value="yes">Auto</option>
+                        <option value=false>Manual</option>
+                    </select>
+            </div>
+        </div>
+        </div>
+        <div class="col-9" id="canvas-div">
+
+            <div class="row">
+                <canvas id="simulationArea"></canvas>
+            </div>
+
+            <div class="row">
+                <div class="col-2 col-s-4">
+                    <button class="btn btn-blue btn-play"  onClick="playSimulation()">Launch</button>
+                    </button>
+                </div>
+                <div class="col-2 col-s-4">
+                    <button class="btn btn-black btn-stop" id="btn-stop" onClick="simulationArea.pause()">Stop</button>
+                </div>
+                <div class="col-2 col-s-4">
+                    <button class="btn btn-yellow btn-reset" id="btn-reset" onClick="simulationArea.reset()">Reset</button>
+                </div>
+                <div class="col-2 col-s-4">
+                    <button class="btn btn-blue btn-play" id="btn-continue" onClick="simulationArea.continue()">
+                        Continue
+                        <!-- we can use svg graphics <svg width=14 height=14 style="display:inline">
+                            <polygon points="0,0 7,7 0,14" style="fill:white;stroke-width:2" />
+                        </svg> -->
+                    </button>
+                </div>
+                <div class="col-2 col-s-4">
+                    <button class="btn btn-blue-dark btn-control" onClick="simulationArea.timeTravel(-1)">Backward</button>
+                </div>
+                <div class="col-2 col-s-4">
+                    <button class="btn btn-blue-dark btn-control" onClick="simulationArea.timeTravel(+1)">Forward</button>
+                </div>
+            </div>
+
+        </div>
+
+
+    </div>
+    <div class="footer">
+        <p></p>
+    </div>
+
+    <script>
+
+        // Simulation Active Object
+        let simulationArea = {
+            canvas: document.querySelector("#simulationArea"),
+            stop: true,
+            initialize: function () {
+                this.canvas.height = 400; 
+                this.canvas.width = idGet('canvas-div').clientWidth - 30;
+                this.initialDeclerations();
+                this.context = this.canvas.getContext("2d");
+                this.initialComponents();
+                this.getParameters();
+                getDisplacement(0);
+                this.updateSimulation();
+            },
+            initialDeclerations: function () {
+                this.scale = 1; // Initial Simulation Grid Scale
+                this.timeCounter = 0;
+                this.status = "initial";
+                this.timeDisplacement = []; // Current Time XY Displacement
+                this.trajectoryArray = []; // Projectile Path
+                this.xyVelocity= idGet('xyVelocity').value;
+                this.autoReset= idGet('autoReset').value;
+                this.lastFrame = false;
+
+                // Primary Responsive Sizes
+                if (this.canvas.width >= 768) {
+                    this.fontSize = "16px";
+                } else if (this.canvas.width < 768 && this.canvas.width >= 600) {
+                    this.fontSize = "14px";
+                } else {
+                    this.fontSize = "6x";
+                }
+                this.padding = 20;
+                this.third = this.canvas.width / 3 + this.padding;
+                this.twoThirds = 2 * this.canvas.width / 3 + this.padding;
+            },
+            initialComponents: function () {
+                this.projectile = new component(15, 0, 0, 290, "red", "circle");
+                this.trajectory = new component(2, 2, 0, 290, "blue", "rect");
+                this.maxHeightText = new component(this.fontSize, "console", this.padding, this.padding, "#333", "text", "");
+                this.timeOfFlyText = new component(this.fontSize, "console", this.twoThirds, this.padding, "#333", "text", "");
+                this.rangeText = new component(this.fontSize, "console", this.third, this.padding, "#333", "text", "");
+                this.xDisplacement = new component(this.fontSize, "console", this.third, 40, "#333", "text", "x");
+                this.yDisplacement = new component(this.fontSize, "console", this.padding, this.padding * 2, "#333", "text", "y");
+                this.tDisplacement = new component(this.fontSize, "console", this.twoThirds, this.padding * 2, "#333", "text", "t");
+                this.scaleText = new component(this.fontSize, "console", this.twoThirds, this.padding * 3, "#333", "text", "t");
+                this.vxText = new component(this.fontSize, "console", this.padding, this.padding * 3, "#333", "text", "vx");
+                this.vyText = new component(this.fontSize, "console", this.third, this.padding * 3, "#333", "text", "vy");
+                this.vxLine = new component(0, 0, 0, 0, "green", "line", "vxl");
+                this.vyLine = new component(0, 0, 0, 0, "blue", "line", "vyl");
+                this.grid = new component(0, 0, 0, 0, "#ddd", "grid", "vyl");
+            },
+            updateSimulation: function () {
+
+                this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.grid.reDraw(this.canvas.width, this.canvas.height, this.maxHeight * simulationArea.scale, this.range * simulationArea.scale);
+                this.projectile.newPos(this.timeDisplacement.x, this.timeDisplacement.y);
+                if (this.trajectoryArray) {
+                    this.trajectoryArray.forEach(element => {
+                        this.trajectory.newPos(element.x, element.y);
+                    });
+                }
+                if(this.xyVelocity=="show"){
+                    this.vxLine.reDraw(this.projectile.x, this.projectile.y, this.projectile.x + this.vx * this.scale, this.projectile.y);
+                    this.vyLine.reDraw(this.projectile.x, this.projectile.y, this.projectile.x, this.projectile.y - this.vy * this.scale);
+                }
+                
+                this.maxHeightText.newText("Maximum Height (X) : " + this.maxHeight + " m");
+                this.timeOfFlyText.newText("Fly Time (T) : " + this.timeOfFly + " s");
+                this.rangeText.newText("Maximum Range (Y) : " + this.range + " m");
+                this.vyText.newText("vy : " + this.vy + " m/s");
+                this.vxText.newText("vx : " + this.vx + " m/s");
+                this.scaleText.newText("Scale : " + this.scale);
+                this.xDisplacement.newText("y : " + this.timeDisplacement.x + " m");
+                this.yDisplacement.newText("x : " + this.timeDisplacement.y + " m");
+                this.tDisplacement.newText("t : " + this.timeDisplacement.t + " s");
+                console.log(this.trajectoryArray);
+            },
+            getParameters: function () {
+                this.simulationSpeed = document.querySelector("#simulationSpeed").value;
+                this.gravity = document.querySelector("#initialGravity").value;
+                this.initialVelocity = document.querySelector("#initialVelocity").value;
+                this.projectionAngle = document.querySelector("#projectionAngle").value * Math.PI / 180,
+                    this.range = _2_f_round(Math.pow(this.initialVelocity, 2) * Math.sin(this.projectionAngle * 2) / this.gravity);
+                this.maxHeightTime = this.initialVelocity * Math.sin(this.projectionAngle) / this.gravity;
+                this.timeOfFly = _2_f_round(2 * this.maxHeightTime);
+                this.maxHeight = _2_f_round(Math.pow((this.initialVelocity * Math.sin(this.projectionAngle)), 2) / (2 * this.gravity));
+                this.vx = _2_f_round(this.initialVelocity * Math.cos(this.projectionAngle));
+                if ((this.canvas.width) < 1.2 * this.range) {
+                    this.scale = _2_f_round((this.canvas.width / this.range * .7));
+                } else if ((this.canvas.width) > 2 * this.range) {
+                    if (this.initialVelocity < 25 && this.initialVelocity >= 10) {
+                        this.scale = 4;
+                    } else if (this.initialVelocity < 10) {
+                        this.scale = 10;
+                    } else {
+                        this.scale = 2;
+                    }
+                }
+                if (this.maxHeight * this.scale > 220) {
+                    this.scale = _2_f_round(((220 / this.maxHeight)));
+                }
+
+                if ((this.scale == 0)) {
+                    alert('Out Of Range Simulation');
+                }
+            },
+            drawgrid: function () {
+
+            },
+            updateParameters: function () {
+                if(this.autoReset=="yes"){
+                    this.stop = true;
+                this.initialize();
+                disableControl(false,'class','btn-play');
+            }
+                
+            },
+            pause: function () {
+                disableControl(false,'id','btn-continue');
+                this.stop = true;
+                
+            },
+            continue: function () {
+                if (this.lastFrame) { return; }
+                this.stop = false;
+                startSimulation();
+            },
+            timeTravel: function (time) {
+                if (this.lastFrame && time > 0) { return; }
+                disableControl(false,'id','btn-continue');
+                this.stop = true;
+                if (time < 0) {
+                    this.timeCounter -= .2;
+                    if (this.timeCounter < 0) { this.timeCounter = 0; }
+                    this.trajectoryArray.length - 2 > 0 ? this.trajectoryArray.length = this.trajectoryArray.length - 2 : this.trajectoryArray.length = 0;
+
+
+                }
+                startSimulation();
+
+
+            },
+
+            reset: function () {
+                this.stop = true;
+                this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.initialize();
+                disableControl(false,'class','btn-play');
+                
+            }
+        }
+
+
+        // Initialize the simulation
+        simulationArea.initialize();
+
+        // Initial Run the simulation
+        function playSimulation() {
+            disableControl(true,'class','btn-play');
+            simulationArea.stop = false;
+            startSimulation();
+        }
+
+        // Run the simulation after calculations
+        function startSimulation() {
+            let speed = 100 / simulationArea.simulationSpeed;
+            getDisplacement(simulationArea.timeCounter);
+            simulationArea.updateSimulation();
+            simulationArea.timeCounter += .1;
+
+            if (simulationArea.timeCounter > simulationArea.timeOfFly && !simulationArea.lastFrame) {
+                simulationArea.lastFrame = true;
+                simulationArea.timeCounter = 2 * simulationArea.maxHeightTime;
+                setTimeout(startSimulation, 1000 * (simulationArea.timeCounter - simulationArea.timeOfFly));
+
+            } else if (simulationArea.timeCounter < simulationArea.timeOfFly && !simulationArea.stop) {
+                setTimeout(startSimulation, speed);
+            } else if (simulationArea.timeCounter <= 2 * simulationArea.maxHeightTime && simulationArea.stop) {
+                simulationArea.lastFrame = false;
+            }
+        }
+
+        // Simulation Figuers Calculations
+        function getDisplacement(time, mode = "simulation") {
+            let x = _2_f_round(simulationArea.initialVelocity * Math.cos(simulationArea.projectionAngle) * time * simulationArea.scale);
+            let y = _2_f_round((simulationArea.initialVelocity * Math.sin(simulationArea.projectionAngle) * time - .5 * simulationArea.gravity * Math.pow(time, 2)) * simulationArea.scale);
+            let t = _2_f_round(time);
+            switch (mode) {
+                case 'simulation':
+                    simulationArea.vy = _2_f_round(simulationArea.initialVelocity * Math.sin(simulationArea.projectionAngle) - (simulationArea.gravity * time));
+                    simulationArea.timeDisplacement = { t: t, x: x, y: y };
+                    simulationArea.trajectoryArray.push(simulationArea.timeDisplacement);
+                    break;
+                case 'value':
+                    return { x: x, y: y };
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        function _2_f_round(num) {
+            return (Math.round((num * Math.pow(10, 2)) + (0.0001)) / Math.pow(10, 2));
+        }
+
+        // Canvas Drawing Components
+        function component(width, height, x, y, color, type, text = null) {
+            this.width = width;
+            this.height = height;
+            this.x = x;
+            this.y = y;
+            this.type = type;
+            this.text = text
+            this.color = color
+            this.update = function () {
+                ctx = simulationArea.context;
+                switch (this.type) {
+                    case "rect":
+                        ctx.lineWidth = 0;
+                        ctx.fillStyle = this.color;
+                        ctx.fillRect(this.x, this.y, this.width, this.height);
+
+                        break;
+                    case "line":
+                        ctx.beginPath();
+                        ctx.lineWidth = 2;
+                        ctx.moveTo(this.x, this.y);
+                        ctx.lineTo(this.width, this.height);
+                        ctx.strokeStyle = this.color;
+                        ctx.stroke();
+                        ctx.closePath()
+                        break;
+                    case "circle":
+                        ctx.fillStyle = this.color;
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.width, 0, 2 * Math.PI);
+                        ctx.fill();
+                        ctx.closePath()
+                        break;
+                    case "text":
+                        ctx.fillStyle = this.color;
+                        ctx.font = this.width + " " + this.height;
+                        ctx.textAlign = "left";
+                        ctx.fillText(this.text, this.x, this.y);
+                        break;
+                    case "grid":
+                        ctx.beginPath();
+                        ctx.lineWidth = 1;
+                        // Vertical
+                        for (let ix = 0; ix < this.x; ix += 15) {
+                            ctx.moveTo(ix, 80);
+                            ctx.lineTo(ix, this.y);
+                        }
+
+                        // Horizontal
+                        for (var iy = 80; iy < this.y; iy += 15) {
+                            ctx.moveTo(0, iy);
+                            ctx.lineTo(this.x, iy);
+                        }
+                        ctx.strokeStyle = this.color;
+                        ctx.stroke();
+                        ctx.closePath();
+
+                }
+            },
+                this.shift = function (value, axis) {
+                    if (axis == "x") {
+                        return (simulationArea.canvas.width - simulationArea.range * simulationArea.scale) / 2 + value;
+                    } else {
+                        return (350 - value);
+                    }
+                },
+                this.newPos = function (x, y) {
+                    this.x = this.shift(x, "x");
+                    this.y = this.shift(y, "y");
+                    this.update();
+                },
+                this.newText = function (txt) {
+                    this.text = txt;
+                    this.update();
+                },
+                this.reDraw = function (x, y, w, h) {
+                    this.x = x;
+                    this.y = y;
+                    this.width = w,
+                        this.height = h;
+                    this.update();
+                }
+        }
+
+        function idGet(id) {
+            return document.getElementById(id);
+        }
+
+
+        // Buttons Control
+        function disableControl(status,type,value){
+            switch(type){
+                case 'id':
+                disabledClass(idGet(value),status);
+                break ;
+                case 'class':
+                var elems = document.getElementsByClassName(value);
+                for (var i = 0; i < elems.length; i++) {
+                    disabledClass(elems[i],status);
+                }
+                break ;
+            }
+
+            if(status==true){
+
+            }else{
+
+            }
+        }
+
+        function disabledClass(element,status){
+            if(status){
+                element.classList.add('disabled');
+            }else{
+                element.classList.remove('disabled');
+            }
+            element.disabled = status;
+        }
+    </script>
+</body>
+
+</html>
