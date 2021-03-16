@@ -201,7 +201,7 @@
 
     <script>
 
-        // Simulation Active Object
+       // Simulation Active Object
         let simulationArea = {
             canvas: document.querySelector("#simulationArea"),
             stop: true,
@@ -274,8 +274,8 @@
                 this.vyText.newText("vy : " + this.vy + " m/s");
                 this.vxText.newText("vx : " + this.vx + " m/s");
                 this.scaleText.newText("Scale : " + this.scale);
-                this.xDisplacement.newText("y : " + this.timeDisplacement.x + " m");
-                this.yDisplacement.newText("x : " + this.timeDisplacement.y + " m");
+                this.xDisplacement.newText("y : " + _2_f_round(this.timeDisplacement.x/ this.scale) + " m");
+                this.yDisplacement.newText("x : " + _2_f_round(this.timeDisplacement.y/ this.scale) + " m");
                 this.tDisplacement.newText("t : " + this.timeDisplacement.t + " s");
                 console.log(this.trajectoryArray);
             },
